@@ -20,8 +20,6 @@ Setup settings:
     "HubsName": "Enter hubs name here..."
 ```
 
-
-
 2. Add it to Azure Function:
 
 ```
@@ -62,7 +60,6 @@ OR
         }
 ```
 
-
 OR
 
 
@@ -76,7 +73,9 @@ OR
             var notification = new HubsMessage(new AppleNotification(payload));
             output.AddAsync(notification);
         }
-        
+
+```   
+
 OR
 
 
