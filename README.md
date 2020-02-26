@@ -11,7 +11,6 @@ Step 1.
 
 ```
             builder.AddNotificationHubs();
-
 ```
 Setup settings:
 
