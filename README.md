@@ -117,8 +117,9 @@ OR
         }
 ```
 
+3. See examples: https://github.com/vitalybibikov/AzureFunctions.Extensions.NotificationHubs/tree/master/examples/FunctionExample
 
-3.  Enjoy
+4.  Enjoy
 
 
 
