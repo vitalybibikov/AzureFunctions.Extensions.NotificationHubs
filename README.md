@@ -6,7 +6,8 @@ to different platforms, that are supported by Azure NotificaionHubs service.
 The binding allows you to send multiple notificaions via Azure Notification Hubs service like so:
 
 Step 1.
-1. Add the nuget *AzureFunctions.Extensions.NotificationHubs*
+1. Add the nuget *AzureFunctions.Extensions.NotificationHubs* => https://www.nuget.org/packages/AzureFunctions.Extensions.NotificationHubs/
+
 2. Add to Startup file the following code.  Currently, accepts simple JWK tokens or tokens loaded out of Azure B2C
 
 ```
