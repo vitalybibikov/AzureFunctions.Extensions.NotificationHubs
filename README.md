@@ -87,7 +87,8 @@ OR
         {
             output = new HubsMessage("Notification Hub test message", Platform.Android);
         }
-        
+```        
+
 OR
 
 
