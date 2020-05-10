@@ -1,9 +1,16 @@
 # AzureFunctions.Extensions.NotificationHubs
 
+Azure Functions Notification Hub output binding
+
 Notification Hubs Output Binding Extension, that supports Azure Functions v3. Allows to send multiple notifications
 to different platforms, that are supported by Azure NotificaionHubs service.
 
 The binding allows you to send multiple notificaions via Azure Notification Hubs service like so:
+
+
+Azure Notification Hub connection strings
+
+To use a Notification hub output binding you must configure the connection string for the hub. You can do this on the Integrate tab by simply selecting your notification hub or creating a new one.
 
 Step 1.
 1. Add the nuget *AzureFunctions.Extensions.NotificationHubs* => https://www.nuget.org/packages/AzureFunctions.Extensions.NotificationHubs/
