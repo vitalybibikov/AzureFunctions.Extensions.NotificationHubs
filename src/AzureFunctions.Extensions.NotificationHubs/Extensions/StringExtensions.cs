@@ -16,7 +16,7 @@ namespace AzureFunctions.Extensions.NotificationHubs.Extensions
             switch (platform)
             {
                 case Platform.Apple:
-                    var alertTemplate = $"{{'aps':{{'alert':'{message}'}}}}";
+                    var alertTemplate = $"{{\"aps\":{{\"alert\":\"{message}\"}}}}";
                     return new AppleNotification(alertTemplate);
 
                 case Platform.Android:
