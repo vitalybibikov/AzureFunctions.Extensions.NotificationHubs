@@ -1,125 +1,132 @@
-# AzureExtensions.FunctionToken
-Extension Attribute to Azure Functions v3, that allows to obrain ClaimsPrincipal on every request. Currently supports key load from Azure B2C by jwks_uri and simple JsonWebKey. Pluggable into Azure Function Startup
+# AzureFunctions.Extensions.NotificationHubs
 
-The extension allows you to use custom tokens in Azure Functions v3.
+Azure Functions Notification Hub output binding
+
+Notification Hubs Output Binding Extension, that supports Azure Functions v3. Allows to send multiple notifications
+to different platforms, that are supported by Azure NotificaionHubs service.
+
+The binding allows you to send multiple notificaions via Azure Notification Hubs service like so:
+
+
+Azure Notification Hub connection strings
+
+To use a Notification hub output binding you must configure the connection string for the hub. You can do this on the Integrate tab by simply selecting your notification hub or creating a new one.
 
 Step 1.
-1. Add the nuget *AzureExtensions.FunctionToken*
+1. Add the nuget *AzureFunctions.Extensions.NotificationHubs* => https://www.nuget.org/packages/AzureFunctions.Extensions.NotificationHubs/
+
 2. Add to Startup file the following code.  Currently, accepts simple JWK tokens or tokens loaded out of Azure B2C
 
 ```
-
-           builder.AddAzureFunctionsToken(new TokenSinginingKeyOptions()
-            {
-                SigningKey = new JsonWebKey("your key"),
-                Audience = "your audience",
-                Issuer = "your issuer"
-            });
+            builder.AddNotificationHubs();
+```
+Setup settings:
 
 ```
-
-OR B2C
-
-```
-            builder.AddAzureFunctionsToken(new TokenAzureB2COptions()
-            {
-                //AzureB2CSingingKeyUri = new Uri("https://yourapp.b2clogin.com/yourapp.onmicrosoft.com/discovery/v2.0/keys?p=yourapp-policy"),
-                Audience = "your audience",
-                Issuer = "your issuer"
-            });
-
+    "DefaultFullSharedAccessSignature": "Endpoint= ...",
+    "HubsName": "Enter hubs name here..."
 ```
 
-OR  Firebase
-```
-            builder.AddAzureFunctionsToken(new FireBaseOptions()
-            {
-                GoogleServiceAccountJsonUri = new Uri("%uri-to-storage-with-secret-json-from-google")
-            });
+2. Add it to Azure Function:
 
 ```
-
-3. Add it to Azure Function:
-
-```
-    public class Example
-    {
-        [FunctionName("Example")]
-        public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req,
-            [FunctionToken] FunctionTokenResult token,
-            ILogger log)
+        [FunctionName("SendOne")]
+        public void SendOne(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "messages")] HttpRequest req,
+            [NotificationHubs] out HubsMessage output)
         {
-            log.LogInformation("C# HTTP trigger function processed a request.");
-            return (ActionResult) new OkObjectResult($"Hello, {token}");
-        }
-    }
-```
-
-4. By, default AuthLevel.Authorized level is used, but you can also specify AuthLevel.AllowAnonymous
-
-
-```
-        [FunctionName("Example")]
-        public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequestMessage req,
-            [FunctionToken(AuthLevel.AllowAnonymous)] FunctionTokenResult token,
-            ILogger log)
-        {
-                log.LogInformation("C# HTTP trigger function processed a request.");
-                return new OkObjectResult($"Hello, {token}");
-        }}
-```
-
-5. Currently, AF 2.0 does not support invocation to Short Circuit, so in order to return proper 401 code when UnAuthorized,
-   the function should be wrapped in Handler: Wrap/WrapAsync.
-   This one will return 401 if token is invalid:
-   
-   
-```
-        [FunctionName("Example")]
-        public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequestMessage req,
-            [FunctionToken(AuthLevel.Authorized)] FunctionTokenResult token,
-            ILogger log)
-        {
-            return await Handler.WrapAsync(token,async () =>
-            {
-                log.LogInformation("C# HTTP trigger function processed a request.");
-                return new OkObjectResult($"Hello, {token}");
-            });
+            output = new HubsMessage("Notification Hub test message", Platform.Android);
         }
 ```
 
-6. Also, roles as a set of strings are supported:
-   In order the role to be validated, role ClaimTypes.Role of System.Security should be presented in a token
-   It is also mapped to type:  http://schemas.microsoft.com/ws/2008/06/identity/claims/role
+3. Different platforms/configurations are possible.
 
-        [FunctionName("Example")]
-        public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequestMessage req,
-            [FunctionToken("Manager", "Worker")] FunctionTokenResult token,
-            ClaimsPrincipal principal,
-            ILogger log)
+
+```
+        [FunctionName("SendConfigured")]
+        public void SendConfigure(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "messages/configure")] HttpRequest req,
+            [NotificationHubs(Connection = "DefaultFullSharedAccessSignature", HubsName = "HubsName")] out HubsMessage output)
         {
-            var identity = token.Principal.Claims.First(x => x.Type == ClaimTypes.NameIdentifier);
-            return await Handler.WrapAsync(token,async () =>
-            {
-                log.LogInformation("C# HTTP trigger function processed a request.");
-                return new OkObjectResult($"Hello, {token}");
-            });
+            output = new HubsMessage("Notification Hub test message", Platform.Android);
+        }
+```
+
+OR
+
+
+```
+        [FunctionName("SendOneWithTags")]
+        public void SendWithTags(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "messages/tags")] HttpRequest req,
+            [NotificationHubs] IAsyncCollector<HubsMessage> output)
+        {
+            var tags = new List<string> {  "registered", "new" };
+            output.AddAsync(new HubsMessage("Notification Hub test message", Platform.Android, "registered", "new"));
+            output.AddAsync(new HubsMessage("Notification Hub test message", Platform.Android, tags));
+        }
+```
+
+OR
+
+
+```
+        [FunctionName("SendAppleNotification")]
+        public void SendAppleNotification(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "notification/apple")] HttpRequest req,
+            [NotificationHubs] IAsyncCollector<HubsMessage> output)
+        {
+            var payload = @"{""aps"":{""alert"":""Notification Hub test notification""}}";
+            var notification = new HubsMessage(new AppleNotification(payload));
+            output.AddAsync(notification);
         }
 
-ClaimsPrincipal can be injected, when 
+```   
 
-           builder.Services.AddHttpContextAccessor();
-
-attached via:
-
-           var injectedPrincipal = req.HttpContext.User;
+OR
 
 
-7.  That's it
+```
+        [FunctionName("SendConfigured")]
+        public void SendConfigure(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "messages/configure")] HttpRequest req,
+            [NotificationHubs(Connection = "DefaultFullSharedAccessSignature", HubsName = "HubsName")] out HubsMessage output)
+        {
+            output = new HubsMessage("Notification Hub test message", Platform.Android);
+        }
+```        
+
+OR
+
+
+```
+        [FunctionName("SendRest")]
+        public void SendRest(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "messages/rest")] HttpRequest req,
+            [NotificationHubs] IAsyncCollector<HubsMessage> output)
+        {
+            var payload = @"%Replace with a payload that is specific to a platform%";
+            var dictionary = new Dictionary<string, string>();
+
+            var notification1 = new HubsMessage(new AppleNotification(payload));
+            var notification2 = new HubsMessage(new AdmNotification(payload));
+            var notification3 = new HubsMessage(new FcmNotification(payload));
+            var notification4 = new HubsMessage(new WindowsNotification(payload));
+            var notification5 = new HubsMessage(new TemplateNotification(dictionary));
+            var notification6 = new HubsMessage(new BaiduNotification(payload));
+
+            output.AddAsync(notification1);
+            output.AddAsync(notification2);
+            output.AddAsync(notification3);
+            output.AddAsync(notification4);
+            output.AddAsync(notification5);
+            output.AddAsync(notification6);
+        }
+```
+
+3. See examples: https://github.com/vitalybibikov/AzureFunctions.Extensions.NotificationHubs/tree/master/examples/FunctionExample
+
+4.  Enjoy
 
 
 
